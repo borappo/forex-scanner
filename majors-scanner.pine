@@ -30,8 +30,8 @@ useMaxBarsFilter = input.bool(true, "", inline = "maxbars", group = gFilter)
 maxTrendBars     = input.int(6, "Max. farbige Kerzen für TREND-Signal", minval = 1, inline = "maxbars", group = gFilter)
 
 // --- Darstellung ---
-showBands  = input.bool(true, "Bollinger Bänder zeichnen", group = "Darstellung")
-showMarks  = input.bool(true, "Markierung (◆) bei Schlusskurs außerhalb der Bänder", group = "Darstellung")
+// Sichtbarkeit von Bändern und Breakout-Markierungen wird direkt im Style-Tab
+// gesteuert (jeder Plot hat einen eigenen Eintrag) — daher keine Inputs mehr.
 tblOffset  = input.int(3, "Tabellen-Versatz nach links (% Chartbreite)", minval = 0, maxval = 50, group = "Darstellung")
 
 // --- Symbole (Checkbox = aktiv, leeres Feld = ebenfalls deaktiviert) ---
@@ -219,45 +219,24 @@ handle(e28, p28)
 // formende Bar bekommt na, damit der Plot dort endet.
 barClosed = time_close <= timenow
 bbColor = color.new(#B2B5BE, 0)
-pUpper = plot(showBands and barClosed ? bbUpper : na, "BB Oben",  color = bbColor)
-plot(showBands and barClosed ? bbBasis : na, "BB Basis", color = bbColor)
-pLower = plot(showBands and barClosed ? bbLower : na, "BB Unten", color = bbColor)
+pUpper = plot(barClosed ? bbUpper : na, "BB Oben",  color = bbColor)
+plot(barClosed ? bbBasis : na, "BB Basis", color = bbColor)
+pLower = plot(barClosed ? bbLower : na, "BB Unten", color = bbColor)
 // Default ausgeblendet (display.none) — bleibt aber im Style-Tab aktivierbar.
-fill(pUpper, pLower, color = showBands ? color.new(#B2B5BE, 92) : na, title = "BB Fläche", display = display.none)
+fill(pUpper, pLower, color = color.new(#B2B5BE, 92), title = "BB Fläche", display = display.none)
 
 // ════════════════════════════════════════════════
 //  MARKIERUNGEN  —  Schlusskurs außerhalb der Bänder
-//  ◆ statt Pfeil, um Verwechslung mit den Order-Pfeilen von TradingView zu
-//  vermeiden. Standardprüfung auf [1]: markiert jede Bar während der Iteration
-//  der nächsten Bar (Bar N bekommt seine Markierung bei Bar N+1).
+//  plotshape mit style.arrowup/arrowdown: getrennte, benannte Einträge im
+//  Style-Tab („Breakout Oben" / „Breakout Unten"), einzeln toggelbar.
+//  barIsFinal gated die noch offene Session-Bar aus — kein Flackern auf
+//  Live-Ticks, und die Wochenend-/Feiertags-Bar wird automatisch markiert.
 // ════════════════════════════════════════════════
-closeAbove = close[1] > bbUpper[1]
-closeBelow = close[1] < bbLower[1]
-
-if showMarks and closeAbove
-    label.new(bar_index[1], high[1], text = "◆", style = label.style_none,
-         textcolor = color.green, size = size.normal, yloc = yloc.abovebar)
-
-if showMarks and closeBelow
-    label.new(bar_index[1], low[1], text = "◆", style = label.style_none,
-         textcolor = color.red, size = size.normal, yloc = yloc.belowbar)
-
-// Sonderfall: letzte Bar der Serie hat bereits geschlossen (z.B. Wochenende).
-// Dann muss sie direkt markiert werden, ohne auf eine nächste Bar zu warten.
-// var-Labels + delete vermeiden Duplikate bei Re-Ticks.
-var label lastBarUp = na
-var label lastBarDn = na
-
-if barstate.islast
-    label.delete(lastBarUp)
-    label.delete(lastBarDn)
-    if showMarks and time_close <= timenow
-        if close > bbUpper
-            lastBarUp := label.new(bar_index, high, text = "◆", style = label.style_none,
-                 textcolor = color.green, size = size.normal, yloc = yloc.abovebar)
-        if close < bbLower
-            lastBarDn := label.new(bar_index, low, text = "◆", style = label.style_none,
-                 textcolor = color.red, size = size.normal, yloc = yloc.belowbar)
+barIsFinal = time_close <= timenow
+plotshape(barIsFinal and close > bbUpper, title = "Breakout Oben",
+     style = shape.arrowup, location = location.abovebar, color = color.green, size = size.small)
+plotshape(barIsFinal and close < bbLower, title = "Breakout Unten",
+     style = shape.arrowdown, location = location.belowbar, color = color.red, size = size.small)
 
 // ════════════════════════════════════════════════
 //  CHART-HINTERGRUND  (aktuelles Chart-Symbol)
