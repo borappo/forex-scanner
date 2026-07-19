@@ -261,10 +261,14 @@ if barstate.islast
 
 // ════════════════════════════════════════════════
 //  CHART-HINTERGRUND  (aktuelles Chart-Symbol)
+//  Gleiches off-Pattern wie in f_scan(): färbt immer anhand der letzten
+//  ABGESCHLOSSENEN Kerze, damit die live Bar nicht bei jedem Tick flippt
+//  und die Färbung mit der Scanner-Klassifikation übereinstimmt.
 // ════════════════════════════════════════════════
 [cMacd, cSig] = f_macd()
-chartGreen = cMacd > 0 and cMacd > cSig
-chartRed   = cMacd < 0 and cMacd < cSig
+int cOff = time_close <= timenow ? 0 : 1
+chartGreen = cMacd[cOff] > 0 and cMacd[cOff] > cSig[cOff]
+chartRed   = cMacd[cOff] < 0 and cMacd[cOff] < cSig[cOff]
 bgcolor(chartGreen ? color.new(color.green, 88) : chartRed ? color.new(color.red, 88) : na, title = "Hintergrund Trendrichtung")
 
 // ════════════════════════════════════════════════
