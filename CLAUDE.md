@@ -13,7 +13,11 @@
 ## Pine v6 Constraints
 - **Hartes Limit: 40 `request.security`-Calls pro Indikator** — bei neuen Symbolen/TFs immer mitzählen
 - Anti-Repaint: immer auf die letzte abgeschlossene Bar schauen, **niemals hartcoded `[1]`**. Siehe Memory `scanner-last-closed-candle`
-- Bei Re-Tick-anfälligen Elementen (`label.new` o.ä.): `var` + `label.delete` Pattern verwenden
+- Bei Re-Tick-anfälligen Elementen (`label.new` o.ä.) auf der **aktuellen** Bar
+  (z.B. `label.new(bar_index, ...)` unter `barstate.islast`): `var` + `label.delete`
+  Pattern verwenden, um Duplikate über die Ticks der offenen Bar zu vermeiden.
+  Auf vergangene Bars (`bar_index[1]`) ist es nicht nötig — Pines Auto-Rollback
+  räumt dort auf.
 
 ## Trading-Logik
 - Wahrheitstabelle für TREND/GEGENTREND in Memory `scanner-trend-logic` — bei Änderungen in `f_scan()` Memory mit-aktualisieren
