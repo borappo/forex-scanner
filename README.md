@@ -25,13 +25,15 @@ wird mit ▶ markiert.
 
 ## Einstellungen
 
-- **Datenquelle** — Broker-Prefix für die Symbol-Anfragen (z.B. SWISSQUOTE, OANDA)
 - **MACD** — Fast/Slow/Signal-Länge, Signaltyp SMA oder EMA
 - **Bollinger Bänder** — Länge und StdDev-Multiplikator
-- **Filter Kriterien TREND & GEGENTREND** — drei Soft-Filter, einzeln per Checkbox
+- **Filter Kriterien TREND & GEGENTREND** — fünf Soft-Filter, einzeln per Checkbox
   deaktivierbar: Mindestabstand Close ↔ Außenband (Pips), Mindestabstand
-  Mittel- ↔ Außenband (Pips), max. Anzahl farbiger Kerzen für ein TREND-Signal
-- **Darstellung** — Bollinger Bänder und Breakout-Markierungen (◆) ein-/ausblenden,
-  Tabellen-Versatz
-- **Symbole** — 28 Slots, jeweils per Checkbox aktivierbar (Paar ohne Broker-Prefix
-  eintragen, z.B. `EURUSD`)
+  Mittel- ↔ Außenband (Pips), max. Anzahl farbiger Kerzen für ein TREND-Signal,
+  Mindest-Faktor Signalbar/Vorbar (Handelsspanne) — getrennt für neutralen und
+  farbigen Gegentrend (nur GEGENTREND-Screening)
+- **Darstellung** — Tabellen-Versatz nach links; Sichtbarkeit von Bollinger
+  Bändern und Breakout-Pfeilen wird direkt im Style-Tab gesteuert
+- **Symbole** — Broker/Datenquelle (SWISSQUOTE, SAXO oder IBKR) und 28 Slots,
+  jeweils per Checkbox aktivierbar (Paar ohne Broker-Prefix eintragen, z.B.
+  `EURUSD`); AUD- und NZD-Paare sind per Default deaktiviert

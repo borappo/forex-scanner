@@ -23,6 +23,10 @@ useSpreadFilter = input.bool(true, "", inline = "spread", group = gFilter)
 minPipsSpread   = input.int(20, "Min. Abstand Mittel- ↔ Außenband (Pips)", minval = 0, inline = "spread", group = gFilter)
 useMaxBarsFilter = input.bool(true, "", inline = "maxbars", group = gFilter)
 maxTrendBars     = input.int(6, "Max. farbige Kerzen für TREND-Signal", minval = 1, inline = "maxbars", group = gFilter)
+useSizeGegenNeutralFilter = input.bool(false, "", inline = "sizen", group = gFilter)
+factorGegenNeutral        = input.float(0.0, "Min. Faktor Signalbar / Vorbar — neutraler Gegentrend", minval = 0, step = 0.1, inline = "sizen", group = gFilter)
+useSizeGegenFarbigFilter  = input.bool(true,  "", inline = "sizef", group = gFilter)
+factorGegenFarbig         = input.float(1.7, "Min. Faktor Signalbar / Vorbar — farbiger Gegentrend",  minval = 0, step = 0.1, inline = "sizef", group = gFilter)
 
 // --- Darstellung ---
 // Sichtbarkeit von Bändern und Breakout-Markierungen wird direkt im Style-Tab
@@ -32,7 +36,7 @@ tblOffset  = input.int(3, "Tabellen-Versatz nach links (% Chartbreite)", minval 
 // --- Symbole (Checkbox = aktiv, leeres Feld = ebenfalls deaktiviert) ---
 gSym = "Symbole  (Checkbox aktiviert das Paar — nur Paar ohne Broker, z.B. EURUSD)"
 broker = input.string("SWISSQUOTE", "Broker / Datenquelle",
-     options = ["SWISSQUOTE", "SAXO", "IBKR", "OANDA", "FX", "FXCM"],
+     options = ["SWISSQUOTE", "SAXO", "IBKR"],
      group = gSym)
 e01 = input.bool(true, "", inline = "01", group = gSym)
 p01 = input.string("EURUSD", "Paar 01", inline = "01", group = gSym)
@@ -44,9 +48,9 @@ e04 = input.bool(true, "", inline = "04", group = gSym)
 p04 = input.string("USDCHF", "Paar 04", inline = "04", group = gSym)
 e05 = input.bool(true, "", inline = "05", group = gSym)
 p05 = input.string("USDCAD", "Paar 05", inline = "05", group = gSym)
-e06 = input.bool(true, "", inline = "06", group = gSym)
+e06 = input.bool(false, "", inline = "06", group = gSym)
 p06 = input.string("AUDUSD", "Paar 06", inline = "06", group = gSym)
-e07 = input.bool(true, "", inline = "07", group = gSym)
+e07 = input.bool(false, "", inline = "07", group = gSym)
 p07 = input.string("NZDUSD", "Paar 07", inline = "07", group = gSym)
 e08 = input.bool(true, "", inline = "08", group = gSym)
 p08 = input.string("EURGBP", "Paar 08", inline = "08", group = gSym)
@@ -56,9 +60,9 @@ e10 = input.bool(true, "", inline = "10", group = gSym)
 p10 = input.string("EURCHF", "Paar 10", inline = "10", group = gSym)
 e11 = input.bool(true, "", inline = "11", group = gSym)
 p11 = input.string("EURCAD", "Paar 11", inline = "11", group = gSym)
-e12 = input.bool(true, "", inline = "12", group = gSym)
+e12 = input.bool(false, "", inline = "12", group = gSym)
 p12 = input.string("EURAUD", "Paar 12", inline = "12", group = gSym)
-e13 = input.bool(true, "", inline = "13", group = gSym)
+e13 = input.bool(false, "", inline = "13", group = gSym)
 p13 = input.string("EURNZD", "Paar 13", inline = "13", group = gSym)
 e14 = input.bool(true, "", inline = "14", group = gSym)
 p14 = input.string("GBPJPY", "Paar 14", inline = "14", group = gSym)
@@ -66,29 +70,29 @@ e15 = input.bool(true, "", inline = "15", group = gSym)
 p15 = input.string("GBPCHF", "Paar 15", inline = "15", group = gSym)
 e16 = input.bool(true, "", inline = "16", group = gSym)
 p16 = input.string("GBPCAD", "Paar 16", inline = "16", group = gSym)
-e17 = input.bool(true, "", inline = "17", group = gSym)
+e17 = input.bool(false, "", inline = "17", group = gSym)
 p17 = input.string("GBPAUD", "Paar 17", inline = "17", group = gSym)
-e18 = input.bool(true, "", inline = "18", group = gSym)
+e18 = input.bool(false, "", inline = "18", group = gSym)
 p18 = input.string("GBPNZD", "Paar 18", inline = "18", group = gSym)
 e19 = input.bool(true, "", inline = "19", group = gSym)
 p19 = input.string("CHFJPY", "Paar 19", inline = "19", group = gSym)
 e20 = input.bool(true, "", inline = "20", group = gSym)
 p20 = input.string("CADJPY", "Paar 20", inline = "20", group = gSym)
-e21 = input.bool(true, "", inline = "21", group = gSym)
+e21 = input.bool(false, "", inline = "21", group = gSym)
 p21 = input.string("AUDJPY", "Paar 21", inline = "21", group = gSym)
-e22 = input.bool(true, "", inline = "22", group = gSym)
+e22 = input.bool(false, "", inline = "22", group = gSym)
 p22 = input.string("NZDJPY", "Paar 22", inline = "22", group = gSym)
 e23 = input.bool(true, "", inline = "23", group = gSym)
 p23 = input.string("CADCHF", "Paar 23", inline = "23", group = gSym)
-e24 = input.bool(true, "", inline = "24", group = gSym)
+e24 = input.bool(false, "", inline = "24", group = gSym)
 p24 = input.string("AUDCHF", "Paar 24", inline = "24", group = gSym)
-e25 = input.bool(true, "", inline = "25", group = gSym)
+e25 = input.bool(false, "", inline = "25", group = gSym)
 p25 = input.string("NZDCHF", "Paar 25", inline = "25", group = gSym)
-e26 = input.bool(true, "", inline = "26", group = gSym)
+e26 = input.bool(false, "", inline = "26", group = gSym)
 p26 = input.string("AUDCAD", "Paar 26", inline = "26", group = gSym)
-e27 = input.bool(true, "", inline = "27", group = gSym)
+e27 = input.bool(false, "", inline = "27", group = gSym)
 p27 = input.string("NZDCAD", "Paar 27", inline = "27", group = gSym)
-e28 = input.bool(true, "", inline = "28", group = gSym)
+e28 = input.bool(false, "", inline = "28", group = gSym)
 p28 = input.string("AUDNZD", "Paar 28", inline = "28", group = gSym)
 
 // ════════════════════════════════════════════════
@@ -152,11 +156,22 @@ f_scan() =>
     // danach gilt der Einstieg als verpasst.
     freshOk = not useMaxBarsFilter or coloredRun[off] <= maxTrendBars
 
+    // Filter D (nur GEGENTREND, TREND bleibt unberührt): Signalbar-Handelsspanne
+    // (high−low) muss mindestens Faktor × Vorbar-Spanne betragen — getrennt
+    // konfigurierbar für neutralen Signalbar und farbigen Signalbar (erste
+    // farbige Kerze nach Neutral-Phase). Checkbox deaktiviert den jeweiligen Check.
+    sigRange   = high[off]     - low[off]
+    prevRange  = high[off + 1] - low[off + 1]
+    sizeFilterActive = isNeutral[off] ? useSizeGegenNeutralFilter :
+         (isColored[off] and isNeutral[off + 1]) ? useSizeGegenFarbigFilter : false
+    factorGegen = isNeutral[off] ? factorGegenNeutral : factorGegenFarbig
+    sizeGegenOk = not sizeFilterActive or sigRange >= factorGegen * prevRange
+
     // Gegentrend-Kerze: neutral, ODER erste farbige Kerze nach einer Neutral-Phase
     gegentrendCandle = isNeutral[off] or (isColored[off] and isNeutral[off + 1])
     trendCandle      = isColored[off]
 
-    gegentrend = outside[off]       and gegentrendCandle and spreadOk and closeOk
+    gegentrend = outside[off]       and gegentrendCandle and spreadOk and closeOk and sizeGegenOk
     trend      = (not outside[off]) and trendCandle      and spreadOk and closeOk and freshOk
 
     [gegentrend, trend]
