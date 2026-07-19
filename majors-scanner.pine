@@ -5,11 +5,6 @@ indicator("Forex Majors Scanner — Trend / Gegentrend", overlay = true, max_bar
 //  EINSTELLUNGEN
 // ════════════════════════════════════════════════
 
-// --- Datenquelle / Broker ---
-broker = input.string("SWISSQUOTE", "Broker / Datenquelle",
-     options = ["SWISSQUOTE", "SAXO", "IBKR", "OANDA", "FX", "FXCM"],
-     group = "Datenquelle")
-
 // --- MACD ---
 macdFast    = input.int(12, "MACD schnell", minval = 1, group = "MACD")
 macdSlow    = input.int(26, "MACD langsam", minval = 1, group = "MACD")
@@ -36,6 +31,9 @@ tblOffset  = input.int(3, "Tabellen-Versatz nach links (% Chartbreite)", minval 
 
 // --- Symbole (Checkbox = aktiv, leeres Feld = ebenfalls deaktiviert) ---
 gSym = "Symbole  (Checkbox aktiviert das Paar — nur Paar ohne Broker, z.B. EURUSD)"
+broker = input.string("SWISSQUOTE", "Broker / Datenquelle",
+     options = ["SWISSQUOTE", "SAXO", "IBKR", "OANDA", "FX", "FXCM"],
+     group = gSym)
 e01 = input.bool(true, "", inline = "01", group = gSym)
 p01 = input.string("EURUSD", "Paar 01", inline = "01", group = gSym)
 e02 = input.bool(true, "", inline = "02", group = gSym)
