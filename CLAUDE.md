@@ -32,6 +32,14 @@
   breiter als die GEGENTREND-Liste — ein Pfeil ohne Listeneintrag ist erwartet, nicht angleichen
 - Kommentare in `f_scan()` sind die Referenz — bei Logik-Änderungen dort und hier mit-aktualisieren
 
+## Offene Punkte
+- **Timeframe-Guardrail fehlt.** `minPipsClose` (6) und `minPipsSpread` (20) sind absolute
+  Preisabstände, kalibriert auf D1. Der Scan folgt seit `c87bb26` aber `timeframe.period`,
+  und die Warnung „⚠ Bitte auf den Tages-Chart (1D) anwenden" wurde im selben Commit entfernt.
+  Auf H1/M15 werden die Filter dadurch still zu Fast-Total-Ablehnungen — ohne Hinweis an den User.
+  Optionen: (a) Warntabelle für TF ≠ 1D zurückholen, (b) Schwellen relativ machen (% oder ATR-normiert).
+  Nicht dringend, solange der Chart auf D1 bleibt.
+
 ## Workflow
 - Commits/Pushes nur auf explizite Anweisung
 - Nach Code-Änderungen: User verifiziert in TradingView (Compile + Verhalten), bevor commit
