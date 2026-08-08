@@ -6,8 +6,17 @@
 - Commit-Messages: **Englisch**, imperativ, knapp (siehe `git log`)
 
 ## Projekt
-- TradingView Pine Script v6 Indikator: `majors-scanner.pine` (einzige Code-Datei)
-- Scannt 28 Forex-Paare auf dem Chart-Timeframe und klassifiziert in TREND / GEGENTREND
+- TradingView Pine Script v6, zwei Indikatoren:
+  - `majors-scanner.pine` — scannt 28 Forex-Paare auf dem Chart-Timeframe, klassifiziert
+    in TREND / GEGENTREND und zeigt das Ergebnis als Tabelle
+  - `majors-overlay.pine` — schlanke Variante: nur Darstellung (Bänder, Breakout-Pfeile,
+    Hintergrund) für das Chart-Symbol, ohne Screening und ohne `request.security`
+- **Geteilter Block:** Alles ab „INDIKATOR-HELPER" ist in beiden Dateien **zeichengleich**
+  (MACD-/BB-Inputs, `f_macd()`, `f_bb()`, Bänder-Plots, Pfeile, Hintergrund). Änderungen daran
+  immer in beiden Dateien nachziehen, sonst zeigt der Chart anderes als die Scanner-Liste.
+  Prüfen per Textvergleich der beiden Abschnitte.
+- Ein Toggle statt zweier Dateien bringt nichts: `request.security`-Calls führt Pine immer aus,
+  auch wenn das Ergebnis ungenutzt bleibt — die Ladezeit bliebe identisch
 - Kein Build, keine Tests, kein CI — Verifikation läuft über Compile + Chart in TradingView durch den User
 
 ## Pine v6 Constraints

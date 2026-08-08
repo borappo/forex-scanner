@@ -16,14 +16,27 @@ Pro Paar wird die letzte **abgeschlossene** Kerze des Chart-Timeframes ausgewert
 Das Ergebnis erscheint als Tabelle oben rechts im Chart; das aktuelle Chart-Symbol
 wird mit ▶ markiert.
 
+## Zwei Varianten
+
+| Datei | Inhalt | Wofür |
+|---|---|---|
+| `majors-scanner.pine` | Screening der 28 Paare + Tabelle, dazu Bänder, Breakout-Pfeile und Trend-Hintergrund | Der morgendliche Durchlauf über alle Paare |
+| `majors-overlay.pine` | Nur Bänder, Breakout-Pfeile und Trend-Hintergrund für das Chart-Symbol | Schnelles Draufschauen auf ein einzelnes Paar — lädt deutlich schneller, da keine `request.security`-Abfragen |
+
+Beide zeichnen dasselbe Chart-Bild; der Darstellungsteil ist in beiden Dateien identisch.
+Nicht gleichzeitig auf denselben Chart legen, sonst liegen die Bänder doppelt übereinander.
+
 ## Installation
 
-1. Inhalt von `majors-scanner.pine` kopieren
+1. Inhalt der gewünschten `.pine`-Datei kopieren
 2. In TradingView den Pine Editor öffnen, Code einfügen, „Zum Chart hinzufügen"
-3. Auf den Chart anwenden — Scanner-Tabelle und Chart-Elemente folgen dem
-   gewählten Chart-Timeframe
+3. Auf den Chart anwenden — alle Elemente folgen dem gewählten Chart-Timeframe
 
 ## Einstellungen
+
+Der Scanner bringt alle unten aufgeführten Gruppen mit. Das Overlay hat nur
+**MACD** und **Bollinger Bänder** — Filter und Symbol-Slots entfallen dort, da sie
+ausschließlich das Screening steuern.
 
 - **MACD** — Fast/Slow/Signal-Länge, Signaltyp SMA oder EMA
 - **Bollinger Bänder** — Länge und StdDev-Multiplikator

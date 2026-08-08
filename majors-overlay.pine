@@ -1,0 +1,90 @@
+//@version=6
+indicator("Forex Majors Overlay — BB / MACD", overlay = true)
+
+// ════════════════════════════════════════════════
+//  Schlanke Variante von majors-scanner.pine: zeichnet nur die Darstellung
+//  für das aktuelle Chart-Symbol (Bollinger Bänder, Breakout-Pfeile,
+//  Trend-Hintergrund) — ohne Screening, ohne Tabelle, ohne die 28
+//  request.security-Calls. Dadurch lädt der Chart deutlich schneller.
+//
+//  WICHTIG: Alles ab „INDIKATOR-HELPER" ist zeichengleich mit dem Scanner.
+//  Änderungen an Helpern oder Darstellung IMMER in beiden Dateien nachziehen,
+//  sonst zeigt der Chart etwas anderes als die Scanner-Liste.
+// ════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════
+//  EINSTELLUNGEN
+// ════════════════════════════════════════════════
+
+// --- MACD ---
+macdFast    = input.int(12, "MACD schnell", minval = 1, group = "MACD")
+macdSlow    = input.int(26, "MACD langsam", minval = 1, group = "MACD")
+macdSigLen  = input.int(9,  "MACD Signal",  minval = 1, group = "MACD")
+macdSigType = input.string("SMA", "MACD Signaltyp", options = ["SMA", "EMA"], group = "MACD")
+
+// --- Bollinger Bänder ---
+bbLength = input.int(12,   "BB Länge",  minval = 1,   group = "Bollinger Bänder")
+bbMult   = input.float(2.0,"BB StdDev", minval = 0.1, step = 0.1, group = "Bollinger Bänder")
+
+// Die Soft-Filter des Scanners fehlen hier bewusst: sie steuern ausschließlich
+// die Listen-Klassifikation (TREND / GEGENTREND) und hätten in einer reinen
+// Darstellungs-Variante keine Wirkung.
+
+// ════════════════════════════════════════════════
+//  INDIKATOR-HELPER  (kontextneutral: laufen im aufrufenden Symbol/TF)
+// ════════════════════════════════════════════════
+f_macd() =>
+    macdLine   = ta.ema(close, macdFast) - ta.ema(close, macdSlow)
+    signalLine = macdSigType == "EMA" ? ta.ema(macdLine, macdSigLen) : ta.sma(macdLine, macdSigLen)
+    [macdLine, signalLine]
+
+f_bb() =>
+    basis = ta.sma(close, bbLength)
+    dev   = bbMult * ta.stdev(close, bbLength)
+    [basis + dev, basis, basis - dev]
+
+// ════════════════════════════════════════════════
+//  BOLLINGER BÄNDER  (aktuelles Chart-Symbol)
+// ════════════════════════════════════════════════
+[bbUpper, bbBasis, bbLower] = f_bb()
+
+// Bänder nur bis zur letzten abgeschlossenen Kerze zeichnen — die aktuell
+// formende Bar bekommt na, damit der Plot dort endet.
+barClosed = time_close <= timenow
+bbColor = color.new(#B2B5BE, 0)
+pUpper = plot(barClosed ? bbUpper : na, "BB Oben",  color = bbColor)
+plot(barClosed ? bbBasis : na, "BB Basis", color = bbColor)
+pLower = plot(barClosed ? bbLower : na, "BB Unten", color = bbColor)
+// Default ausgeblendet (display.none) — bleibt aber im Style-Tab aktivierbar.
+fill(pUpper, pLower, color = color.new(#B2B5BE, 92), title = "BB Fläche", display = display.none)
+
+// ════════════════════════════════════════════════
+//  MARKIERUNGEN  —  Schlusskurs außerhalb der Bänder
+//  BEWUSST UNGEFILTERT: die Pfeile markieren ausschließlich „Close außerhalb
+//  Band" und übernehmen KEINE der GEGENTREND-Bedingungen (Signalbar-Typ,
+//  Filter A/B/D). Sie sind daher breiter als die GEGENTREND-Liste — ein Pfeil
+//  ohne Listeneintrag ist erwartet, z.B. in der toten Zone (farbige Kerze mit
+//  farbiger Vorkerze außerhalb des Bandes) oder wenn ein Filter greift.
+//  Nicht „angleichen" — der Chart zeigt rohe Breakouts, die Liste die Setups.
+//
+//  plotshape mit style.arrowup/arrowdown: getrennte, benannte Einträge im
+//  Style-Tab („Breakout Oben" / „Breakout Unten"), einzeln toggelbar.
+//  barIsFinal gated die noch offene Session-Bar aus — kein Flackern auf
+//  Live-Ticks, und die Wochenend-/Feiertags-Bar wird automatisch markiert.
+// ════════════════════════════════════════════════
+barIsFinal = time_close <= timenow
+plotshape(barIsFinal and close > bbUpper, title = "Breakout Oben",
+     style = shape.arrowup, location = location.abovebar, color = color.green, size = size.small)
+plotshape(barIsFinal and close < bbLower, title = "Breakout Unten",
+     style = shape.arrowdown, location = location.belowbar, color = color.red, size = size.small)
+
+// ════════════════════════════════════════════════
+//  CHART-HINTERGRUND  (aktuelles Chart-Symbol)
+//  Nur abgeschlossene Kerzen werden gefärbt — die noch offene Bar bleibt
+//  farblos (gleiches Prinzip wie Bänder und Breakout-Pfeile: die offene Bar
+//  ist noch nicht bewertet). Kein Flackern auf Live-Ticks.
+// ════════════════════════════════════════════════
+[cMacd, cSig] = f_macd()
+chartGreen = cMacd > 0 and cMacd > cSig
+chartRed   = cMacd < 0 and cMacd < cSig
+bgcolor(not barIsFinal ? na : chartGreen ? color.new(color.green, 88) : chartRed ? color.new(color.red, 88) : na, title = "Hintergrund Trendrichtung")
