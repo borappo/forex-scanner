@@ -242,6 +242,13 @@ fill(pUpper, pLower, color = color.new(#B2B5BE, 92), title = "BB Fläche", displ
 
 // ════════════════════════════════════════════════
 //  MARKIERUNGEN  —  Schlusskurs außerhalb der Bänder
+//  BEWUSST UNGEFILTERT: die Pfeile markieren ausschließlich „Close außerhalb
+//  Band" und übernehmen KEINE der GEGENTREND-Bedingungen (Signalbar-Typ,
+//  Filter A/B/D). Sie sind daher breiter als die GEGENTREND-Liste — ein Pfeil
+//  ohne Listeneintrag ist erwartet, z.B. in der toten Zone (farbige Kerze mit
+//  farbiger Vorkerze außerhalb des Bandes) oder wenn ein Filter greift.
+//  Nicht „angleichen" — der Chart zeigt rohe Breakouts, die Liste die Setups.
+//
 //  plotshape mit style.arrowup/arrowdown: getrennte, benannte Einträge im
 //  Style-Tab („Breakout Oben" / „Breakout Unten"), einzeln toggelbar.
 //  barIsFinal gated die noch offene Session-Bar aus — kein Flackern auf
