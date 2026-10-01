@@ -1,15 +1,18 @@
 //@version=6
-indicator("Forex Majors Overlay — BB / MACD", overlay = true)
+indicator("Forex Majors Overlay — BB / MACD", overlay = true, max_bars_back = 200)
 
 // ════════════════════════════════════════════════
-//  Schlanke Variante von majors-scanner.pine: zeichnet nur die Darstellung
+//  Schlanke Variante von majors-scanner.pine: zeichnet nur die Chart-Darstellung
 //  für das aktuelle Chart-Symbol (Bollinger Bänder, Breakout-Pfeile,
 //  Trend-Hintergrund) — ohne Screening, ohne Tabelle, ohne die 28
 //  request.security-Calls. Dadurch lädt der Chart deutlich schneller.
 //
-//  WICHTIG: Alles ab „INDIKATOR-HELPER" ist zeichengleich mit dem Scanner.
-//  Änderungen an Helpern oder Darstellung IMMER in beiden Dateien nachziehen,
-//  sonst zeigt der Chart etwas anderes als die Scanner-Liste.
+//  Die Einstiegsanzeige gibt es hier bewusst NICHT: sie zeigt nur Symbole, die in
+//  der Scanner-Tabelle stehen, und setzt damit das Screening voraus.
+//
+//  WICHTIG: Inputs, Helper und Darstellungs-Abschnitte sind zeichengleich mit dem
+//  Scanner. Änderungen daran IMMER in beiden Dateien nachziehen, sonst zeigt der
+//  Chart etwas anderes als die Scanner-Liste.
 // ════════════════════════════════════════════════
 
 // ════════════════════════════════════════════════

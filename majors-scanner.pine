@@ -28,6 +28,15 @@ factorGegenNeutral        = input.float(0.0, "Min. Faktor Signalbar / Vorbar —
 useSizeGegenFarbigFilter  = input.bool(true,  "", inline = "sizef", group = gFilter)
 factorGegenFarbig         = input.float(1.7, "Min. Faktor Signalbar / Vorbar — farbiger Gegentrend",  minval = 0, step = 0.1, inline = "sizef", group = gFilter)
 
+// --- Einstieg ---
+// Toggles hier als Inputs (nicht über den Style-Tab wie Bänder und Pfeile):
+// Linien, Labels und Tabellen kennt der Style-Tab nur sammelweise („Pane labels",
+// „Tables") — sonst würde die Ergebnis-Tabelle mit abgeschaltet.
+gEntry        = "Einstieg"
+minPipsEntry  = input.int(10, "Mindestabstand Kurs ↔ Einstieg (Pips)", minval = 0, group = gEntry)
+showEntryLine = input.bool(true, "Einstiegslinie + Pip-Label zeichnen", group = gEntry)
+showEntryBox  = input.bool(true, "Infobox unten rechts",                group = gEntry)
+
 // --- Darstellung ---
 // Sichtbarkeit von Bändern und Breakout-Markierungen wird direkt im Style-Tab
 // gesteuert (jeder Plot hat einen eigenen Eintrag) — daher keine Inputs mehr.
@@ -110,13 +119,62 @@ f_bb() =>
     dev   = bbMult * ta.stdev(close, bbLength)
     [basis + dev, basis, basis - dev]
 
+// 1 Pip: JPY-Paare quotieren 2-stellig (0.01), alle anderen 4-stellig (0.0001).
+f_pip() =>
+    str.endswith(syminfo.ticker, "JPY") ? 0.01 : 0.0001
+
+// Setup-Typ, Einstiegsniveau und Order-Richtung der letzten ABGESCHLOSSENEN Kerze.
+// Einzige Definition der Kerzen-Klassifikation — f_scan() (nur im Scanner) baut darauf
+// auf und ergänzt nur die Soft-Filter. BEWUSST UNGEFILTERT: wie die Breakout-Pfeile zeigt
+// das Chart-Element die rohe Struktur, die gefilterten Setups stehen in der Liste.
+// Rückgabe [entryLvl, setupTyp, ordDir, off]:
+//   entryLvl  TREND grün → oberes Band, TREND rot → unteres Band,
+//             GEGENTREND → Schlusskurs der Signalkerze; na wenn kein Setup
+//   setupTyp  0 = kein Setup, 1 = TREND, 2 = GEGENTREND
+//   ordDir   +1 = Buy-Stop (Kurs muss steigen), -1 = Sell-Stop (Kurs muss fallen), 0 = keins
+//   off       Offset der letzten abgeschlossenen Kerze (0 oder 1)
+f_entry() =>
+    [macdLine, signalLine] = f_macd()
+    [upper, _basis, lower] = f_bb()
+
+    isGreen   = macdLine > 0 and macdLine > signalLine
+    isRed     = macdLine < 0 and macdLine < signalLine
+    isColored = isGreen or isRed
+    isNeutral = not isColored
+    outside   = close > upper or close < lower
+
+    // Dynamischer Offset, um IMMER auf die letzte ABGESCHLOSSENE Kerze
+    // zu schauen — unabhängig davon, ob der Markt gerade offen ist:
+    //   - Markt offen (aktuelle Bar formt sich noch): off = 1 → vorherige Bar
+    //   - Markt zu  (aktuelle Bar ist bereits final, z.B. Wochenende): off = 0 → aktuelle Bar
+    int off = time_close <= timenow ? 0 : 1
+
+    // Gegentrend-Kerze: neutral, ODER erste farbige Kerze nach einer Neutral-Phase
+    gegentrendCandle = isNeutral[off] or (isColored[off] and isNeutral[off + 1])
+    trendCandle      = isColored[off]
+
+    isTrend = (not outside[off]) and trendCandle
+    isGegen = outside[off]       and gegentrendCandle
+    // Beim Gegentrend gibt die durchbrochene Bandseite die Umkehrrichtung vor:
+    // Ausbruch nach oben → erwartete Umkehr nach unten → Sell-Stop.
+    breakUp = close[off] > upper[off]
+
+    int   setupTyp = isTrend ? 1 : isGegen ? 2 : 0
+    int   ordDir   = isTrend ? (isGreen[off] ? 1 : -1) : isGegen ? (breakUp ? -1 : 1) : 0
+    float entryLvl = isTrend ? (isGreen[off] ? upper[off] : lower[off]) : isGegen ? close[off] : na
+
+    [entryLvl, setupTyp, ordDir, off]
+
 // ════════════════════════════════════════════════
 //  BERECHNUNG  (läuft im Kontext des jeweiligen Symbols)
 //  Gibt für die LETZTE ABGESCHLOSSENE Kerze zurück: [gegentrend, trend]
+//  Die Kerzen-Klassifikation kommt aus f_entry(); hier kommen nur die
+//  Soft-Filter dazu. Setup-Definition also NICHT hier ändern, sondern dort.
 // ════════════════════════════════════════════════
 f_scan() =>
     [macdLine, signalLine] = f_macd()
     [upper, basis, lower] = f_bb()
+    [_lvl, setupTyp, _dir, off] = f_entry()
 
     // Hintergrund-Klassifikation pro Kerze
     isGreen   = macdLine > 0 and macdLine > signalLine
@@ -133,15 +191,8 @@ f_scan() =>
     // Schlusskurs ausserhalb der Bollinger Bänder?
     outside = close > upper or close < lower
 
-    // Dynamischer Offset, um IMMER auf die letzte ABGESCHLOSSENE Kerze
-    // zu schauen — unabhängig davon, ob der Markt gerade offen ist:
-    //   - Markt offen (aktuelle Bar formt sich noch): off = 1 → vorherige Bar
-    //   - Markt zu  (aktuelle Bar ist bereits final, z.B. Wochenende): off = 0 → aktuelle Bar
-    int off = time_close <= timenow ? 0 : 1
-
     // Soft-Filter: greifen nur, wenn ihre Checkbox aktiv ist.
-    // JPY-Paare quotieren 2-stellig (1 Pip = 0.01), alle anderen 4-stellig (1 Pip = 0.0001).
-    pipSize = str.endswith(syminfo.ticker, "JPY") ? 0.01 : 0.0001
+    pipSize = f_pip()
 
     // Filter A: Bandbreite Mittel- ↔ Außenband
     spreadOk = not useSpreadFilter or (upper[off] - basis[off]) >= minPipsSpread * pipSize
@@ -169,18 +220,21 @@ f_scan() =>
     factorGegen = isNeutral[off] ? factorGegenNeutral : factorGegenFarbig
     sizeGegenOk = not sizeFilterActive or sigRange >= factorGegen * prevRange
 
-    // Gegentrend-Kerze: neutral, ODER erste farbige Kerze nach einer Neutral-Phase
-    gegentrendCandle = isNeutral[off] or (isColored[off] and isNeutral[off + 1])
-    trendCandle      = isColored[off]
-
-    gegentrend = outside[off]       and gegentrendCandle and spreadOk and closeOk and sizeGegenOk
-    trend      = (not outside[off]) and trendCandle      and spreadOk and closeOk and freshOk
+    // setupTyp aus f_entry(): 1 = TREND, 2 = GEGENTREND (Close-Lage und Kerzentyp
+    // sind dort bereits verrechnet) — hier kommen nur die Soft-Filter dazu.
+    gegentrend = setupTyp == 2 and spreadOk and closeOk and sizeGegenOk
+    trend      = setupTyp == 1 and spreadOk and closeOk and freshOk
 
     [gegentrend, trend]
 
 // ════════════════════════════════════════════════
 //  SCAN ALLER SLOTS
 // ════════════════════════════════════════════════
+// Chart-Symbol-Kontext — wird sowohl für die ▶-Markierung in der Tabelle als auch
+// für die Einstiegsanzeige gebraucht, muss also vor den handle()-Aufrufen stehen.
+chartSym    = syminfo.ticker
+brokerMatch = syminfo.prefix == broker
+
 var string[] gegenList = array.new_string()
 var string[] trendList = array.new_string()
 array.clear(gegenList)
@@ -272,6 +326,68 @@ chartRed   = cMacd < 0 and cMacd < cSig
 bgcolor(not barIsFinal ? na : chartGreen ? color.new(color.green, 88) : chartRed ? color.new(color.red, 88) : na, title = "Hintergrund Trendrichtung")
 
 // ════════════════════════════════════════════════
+//  EINSTIEG  —  Niveau und aktueller Abstand in Pips
+//  Zeigt, wo die Stop-Order liegt und wie weit der Kurs noch dorthin braucht.
+//  Ziel sind „entspannte" Orders: liegt der Abstand unter der Schwelle, wirkt
+//  die Stop-Order wie eine Market-Order und der Kurs kommt ohne Schwung ins Trade.
+//
+//  SICHTBAR NUR FÜR SYMBOLE AUS DER TABELLE: gezeichnet wird ausschließlich, wenn
+//  das Chart-Symbol selbst in der TREND- oder GEGENTREND-Liste steht — also nach
+//  allen Soft-Filtern. Die Listen sind zu diesem Zeitpunkt gefüllt, weil die
+//  handle()-Aufrufe im Quelltext davor stehen.
+//
+//  Niveau und Richtung liefert f_entry() auf Chart-Ebene. Das ist identisch mit der
+//  Auswertung im request.security-Aufruf, weil die Anzeige brokerMatch verlangt —
+//  Chart-Symbol und gescanntes Symbol sind dann dasselbe Symbol im selben Timeframe.
+//
+//  LIVE-ELEMENT — bewusst anders als Bänder, Pfeile und Hintergrund: der Abstand
+//  aktualisiert sich mit jedem Tick, denn genau das ist die gesuchte Information.
+//  Nur das NIVEAU stammt aus der letzten abgeschlossenen Kerze.
+//
+//  var + delete, weil Linie und Label auf der aktuellen Bar liegen und je Tick neu entstehen.
+// ════════════════════════════════════════════════
+[chartEntryLvl, _cSetup, chartEntryDir, _cOff] = f_entry()
+
+// Sichtbarkeit kommt aus der Tabelle, nicht aus der Klassifikation: nur Symbole,
+// die tatsächlich gelistet sind, bekommen eine Einstiegsanzeige.
+inGegenList = array.includes(gegenList, chartSym)
+inTrendList = array.includes(trendList, chartSym)
+entryActive = brokerMatch and (inGegenList or inTrendList)
+
+// Abstand gegen die Order-Richtung gerechnet: positiv = Kurs muss noch laufen,
+// negativ = Niveau bereits überschritten (Order wäre ausgelöst, Einstieg verpasst).
+entryDist   = chartEntryDir * (chartEntryLvl - close) / f_pip()
+entryOk     = entryDist >= minPipsEntry
+entryColor  = entryOk ? color.new(color.green, 0) : color.new(color.red, 0)
+entryGlyph  = entryDist < 0 ? "⚠" : entryOk ? "✓" : "✗"
+entryTxt    = str.tostring(entryDist, "#.#") + " P"
+
+var line  entryLn  = na
+var label entryLbl = na
+
+if barstate.islast
+    line.delete(entryLn)
+    label.delete(entryLbl)
+    if showEntryLine and entryActive
+        entryLn := line.new(math.max(bar_index - 5, 0), chartEntryLvl, bar_index + 5, chartEntryLvl,
+             xloc = xloc.bar_index, color = entryColor, style = line.style_dashed)
+        entryLbl := label.new(bar_index + 6, chartEntryLvl, text = entryTxt,
+             style = label.style_none, textcolor = entryColor, size = size.normal)
+
+var table entryBox = na
+
+if barstate.islast
+    table.delete(entryBox)
+    if showEntryBox and entryActive
+        entryBox := table.new(position.bottom_right, 2, 3, border_width = 1, border_color = color.new(color.gray, 100))
+        table.cell(entryBox, 0, 0, "Setup",    text_color = color.gray)
+        table.cell(entryBox, 1, 0, inTrendList ? "TREND" : "GEGENTREND", text_color = color.white)
+        table.cell(entryBox, 0, 1, "Einstieg", text_color = color.gray)
+        table.cell(entryBox, 1, 1, str.tostring(chartEntryLvl, format.mintick), text_color = color.white)
+        table.cell(entryBox, 0, 2, "Abstand",  text_color = color.gray)
+        table.cell(entryBox, 1, 2, entryTxt + "  " + entryGlyph, text_color = entryColor)
+
+// ════════════════════════════════════════════════
 //  TABELLE
 // ════════════════════════════════════════════════
 // Voll transparenter Zellrand: hält 1px Abstand zwischen den Zellen, zeichnet
@@ -279,11 +395,9 @@ bgcolor(not barIsFinal ? na : chartGreen ? color.new(color.green, 88) : chartRed
 var table tbl = table.new(position.top_right, 2, 1, border_width = 1, border_color = color.new(color.gray, 100))
 
 // Markiert das aktuelle Chart-Symbol — aber nur, wenn der Chart-Broker
-// dem in den Settings ausgewählten Broker entspricht. Padding mit 2 Zeichen
-// hält die Symbole in Monospace-Schrift bündig.
-chartSym    = syminfo.ticker
-brokerMatch = syminfo.prefix == broker
-
+// dem in den Settings ausgewählten Broker entspricht (chartSym/brokerMatch sind
+// oben vor den handle()-Aufrufen definiert). Padding mit 2 Zeichen hält die
+// Symbole in Monospace-Schrift bündig.
 f_mark(string s) =>
     isPair    = s != "" and s != "—"
     isCurrent = brokerMatch and s == chartSym
